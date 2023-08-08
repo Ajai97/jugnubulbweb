@@ -1,0 +1,84 @@
+package com.app.service;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+
+import javax.validation.Valid;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import com.app.dao.UserRepository;
+import com.app.dto.UserDTO;
+import com.app.entity.User;
+import com.app.utility.CustomException;
+
+@Service
+public class UserService {
+	@Autowired
+	UserRepository userRepository;
+	
+	//For User Registration
+	public User addUser(UserDTO userdto) throws CustomException{
+		User user=new User();
+		if(!userRepository.findByEmail(userdto.getEmail()).isEmpty()) { 
+			throw new CustomException("User.Email.AlreadyPresent");
+		}
+		user.setUserName(userdto.getUserName());
+		user.setEmail(userdto.getEmail());
+		user.setMobileno(userdto.getMobileno());
+		user.setPassword(userdto.getPassword());
+		if(userRepository.findAll().size()==0)
+			user.setUserType("admin");
+		else
+			user.setUserType("user");
+		user.setAnswer(userdto.getAnswer());
+		user.setQuestion(userdto.getQuestion());
+		return userRepository.save(user);
+	}
+	
+	//For User Login
+	public User logIn(UserDTO userdto) throws CustomException {
+		List<User> user=userRepository.getUser(userdto.getEmail(), userdto.getPassword());
+		if(user.isEmpty()){
+			throw new CustomException("User.Login.Invalid.Credentials");
+		}
+		return user.get(0);
+		
+	}
+	
+	public Optional<User> findById(int id) {
+		Optional<User> user=userRepository.findById(id);
+		return user;
+	}
+
+	public ArrayList<User> getAllUsers() {
+	
+		return (ArrayList<User>) userRepository.findAll();
+	}
+
+	public User validateUser(@Valid UserDTO userdto) throws CustomException{
+		ArrayList<User> user= (ArrayList<User>) userRepository.findByEmail(userdto.getEmail());
+		User UserDetsils=new User();
+		if(user.size()<1) {			
+			throw new CustomException("Invalid Email...!");
+		}
+		if(user.size()>1) {
+			for(User vuser:user) {
+				if(  vuser.getEmail().equals(userdto.getEmail())
+						&& vuser.getQuestion()==userdto.getQuestion()
+						&& vuser.getAnswer().equals(userdto.getAnswer()))
+				{
+					UserDetsils.setEmail(vuser.getEmail());
+					UserDetsils.setUserId(vuser.getUserId());
+				}
+				}
+				
+			}
+		}
+		else
+			throw new CustomException("Invalid Details...!");
+
+	}
+}

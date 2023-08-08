@@ -1,0 +1,150 @@
+package com.app.rest;
+
+import java.util.List;
+import java.util.Optional;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RequestPart;
+import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
+
+import com.app.dto.ImageDto;
+import com.app.dto.ProductCategoryDTO;
+import com.app.dto.ProductDTO;
+import com.app.dto.UserDTO;
+import com.app.entity.Product;
+import com.app.entity.ProductCategory;
+import com.app.service.ProductService;
+import com.app.utility.CustomException;
+
+import antlr.StringUtils;
+
+
+@CrossOrigin
+@RestController
+@RequestMapping("/product-api")
+public class ProductRestController {
+
+	@Autowired
+	private ProductService productService;
+	
+
+	@GetMapping("/product/{pageNo}/{column}/{method}")
+	public ResponseEntity<List<Product>> findAll(@PathVariable Integer pageNo,@PathVariable String column,@PathVariable String method ) {
+		return new ResponseEntity<>(productService.findAll(pageNo , column , method),HttpStatus.OK);
+	}
+	
+	  @PostMapping("/product")
+	    public ResponseEntity<Product> addProduct(@RequestParam("image") MultipartFile image,
+	                                               @RequestParam("productName") String productName,  
+	                                               @RequestParam("discription") String description,	             
+	                                               @RequestParam("price") double price,
+	                                               @RequestParam("productCategory") String productCategory
+	                                              ) throws Exception {
+
+	    
+
+	        Product product = new Product();
+	        product.setProductName(productName);
+	        product.setDiscription(description);
+	        product.setPrice((int) price);
+	       System.out.println("PrductName================================"+productName);
+	        ProductCategory ProductCategory = new ProductCategory();
+	        System.out.println("productCategory================================"+productCategory);
+	        ProductCategory.setCategory(productCategory);
+	        product.setCategory(ProductCategory);
+
+	        Product product1 = productService.addProduct(product);
+	        if (product1 != null) {
+	            int id = product1.getProductId();
+	            ImageDto imageDto = new ImageDto(id, image);
+	            productService.addProductImage(imageDto);
+	        }
+
+	        return new ResponseEntity<>(product, HttpStatus.OK);
+	  }
+
+	  
+	  @RequestMapping("/updateProduct")
+	    public ResponseEntity<Product> updateProduct(
+	    		                                   @RequestParam ("productId") String productId,
+	                                               @RequestParam("productName") String productName,  
+	                                               @RequestParam("discription") String description,	             
+	                                               @RequestParam("price") double price,
+	                                               @RequestParam("productCategory") String productCategory,
+	                                               @RequestParam()String isSold
+	                                              ) throws Exception {
+
+	    
+
+	        Product product = productService.findByProductId(Integer.parseInt(productId));
+	        product.setProductName(productName);
+	        product.setDiscription(description);
+	        product.setPrice((int) price);	      
+	        ProductCategory ProductCategory = new ProductCategory();	      
+	        ProductCategory.setCategory(productCategory);
+	        product.setCategory(ProductCategory);
+           if(isSold.equals("Yes"))
+        	   product.setIsSold(true);
+           else 
+        	   product.setIsSold(true);
+	       
+         
+	        return new ResponseEntity<>( productService.UpdateProduct(product), HttpStatus.OK);
+	  }  
+	
+	@RequestMapping("/availableProducts")
+	public ResponseEntity<List<Product>> availableProducts(@RequestBody UserDTO userdto) throws CustomException {
+		return new ResponseEntity<>(productService.availableProducts(userdto),HttpStatus.OK);
+				
+	}
+		
+	@GetMapping("/product-by-category/{id}")
+	public ResponseEntity <List<Product>> findByCategory(@PathVariable int id) throws CustomException {
+		return new ResponseEntity<>(productService.findByCategory(id),HttpStatus.OK);
+				
+	}
+	
+	@GetMapping("/product-lowToHighPrice")
+	public ResponseEntity<List<Product>> lowToHighPrice(){
+		return new ResponseEntity<>(productService.lowToHighPrice(),HttpStatus.OK); 
+	}
+	
+	@GetMapping("/product-highToLowPrice")
+	public ResponseEntity<List<Product>> highToLowPrice(){
+		return new ResponseEntity<>(productService.highToLowPrice(),HttpStatus.OK); 
+	}
+	@GetMapping("/product/{productId}")
+	public ResponseEntity<Product> getProductInfo(@PathVariable int productId) throws CustomException{
+		return new ResponseEntity<>(productService.getProductInfo(productId),HttpStatus.OK); 
+	}
+	 
+	@GetMapping("/allproducts")
+	public ResponseEntity<List<Product>> myProducts() throws CustomException{
+		return new ResponseEntity<>(productService.allProducts(),HttpStatus.OK); 
+		
+	}
+	
+	@DeleteMapping("/removeProduct/{productId}")
+	public ResponseEntity<String> removeProduct(@PathVariable Integer productId ) throws CustomException{
+		System.out.println("reached rest delete");
+		return new ResponseEntity<>(productService.removeProduct(productId),HttpStatus.OK); 
+		
+	}
+	
+	@GetMapping("/search-product/{product}")
+	public ResponseEntity<List<Product>> searchProduct(@PathVariable String product) throws CustomException{
+		return new ResponseEntity<>(productService.searchProduct(product),HttpStatus.OK); 
+	}
+	
+}
